@@ -1,105 +1,4 @@
-DROP DATABASE IF EXISTS Testing_System_Assignment_1 ;
-CREATE DATABASE Testing_System_Assignment_1;
-USE `Testing_System_Assignment_1`;
-
-DROP TABLE IF EXISTS `Department`;
-CREATE TABLE `Department`(
-	`DepartmentID` 				TINYINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
-    `DepartmentName` 			VARCHAR(50) NOT NULL UNIQUE KEY
-);
-
-DROP TABLE IF EXISTS `Position`;
-CREATE TABLE `Position`(
-	`PositionID` 				TINYINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
-    `PositionName` 				ENUM('Dev', 'Tes', 'Scrum Master', 'PM') NOT NULL UNIQUE KEY
-);
-
-DROP TABLE IF EXISTS `Account`;
-CREATE TABLE `Account`(
-	`AccountID` 				INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
-    `Email`						VARCHAR(50) NOT NULL UNIQUE KEY,
-    `Username`					VARCHAR(30) NOT NULL UNIQUE KEY,
-    `Fullname`					VARCHAR(30) NOT NULL,
-    `DepartmentID`				TINYINT UNSIGNED NOT NULL,
-    `PositionID`				TINYINT UNSIGNED NOT NULL,
-    `CreateDate`				DATETIME DEFAULT NOW(),
-	CONSTRAINT FOREIGN KEY(`DepartmentID`) REFERENCES Department(`DepartmentID`),
-    CONSTRAINT FOREIGN KEY(`PositionID`) 	REFERENCES `Position`(`PositionID`)
-);
-
-DROP TABLE IF EXISTS `Group`;
-CREATE TABLE `Group`(
-	`GroupID` 					TINYINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
-    `GroupName` 				VARCHAR(70) UNIQUE KEY,
-    `CreatorID` 				INT UNSIGNED,
-    `CreateDate` 				DATETIME DEFAULT NOW(),
-    CONSTRAINT FOREIGN KEY(`CreatorID`) 	REFERENCES Account(`AccountID`)
-);
-
-DROP TABLE IF EXISTS `GroupAccount`;
-CREATE TABLE `GroupAccount`(
-	`GroupID` 					TINYINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
-    `AccountID` 				INT UNSIGNED NOT NULL,
-    `JoinDate` 					DATETIME DEFAULT NOW(),
-    CONSTRAINT FOREIGN KEY(`AccountID`) 	REFERENCES Account(`AccountID`)
-);
-
-DROP TABLE IF EXISTS `TypeQuestion`;
-CREATE TABLE `TypeQuestion`(
-	`TypeID` 					INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
-    `TypeName` 					ENUM('Essay', 'Multiple-Choice') NOT NULL
-);
-
-DROP TABLE IF EXISTS `CategoryQuestion`;
-CREATE TABLE `CategoryQuestion`(
-	`CategoryID` 				INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
-    `CategoryName` 				ENUM('Java', '.NET', 'SQL', 'POSTMAN', 'Ruby') NOT NULL
-);
-
-DROP TABLE IF EXISTS `Question`;
-CREATE TABLE `Question`(
-	`QuestionID` 				INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
-    `Content` 					VARCHAR(100) NOT NULL,
-    `CategoryID` 				INT UNSIGNED NOT NULL,
-    `TypeID` 					INT UNSIGNED NOT NULL,
-    `CreatorID` 				INT UNSIGNED NOT NULL,
-    `CreateDate` 				DATETIME DEFAULT NOW(),
-    CONSTRAINT FOREIGN KEY(`CategoryID`) 	REFERENCES CategoryQuestion(`CategoryID`),
-    CONSTRAINT FOREIGN KEY(`TypeID`) 		REFERENCES TypeQuestion(`TypeID`),
-    CONSTRAINT FOREIGN KEY(`CreatorID`) 	REFERENCES Account(`AccountID`)
-);
-
-DROP TABLE IF EXISTS `Answer`;
-CREATE TABLE `Answer`(
-	`AnswerID` 					INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
-    `Content` 					VARCHAR(100) NOT NULL,
-    `QuestionID` 				INT UNSIGNED NOT NULL,
-    `isCorrect` 				ENUM('1','0') NOT NULL,
-    CONSTRAINT answer_ibfk_1 FOREIGN KEY(`QuestionID`) 	REFERENCES Question(`QuestionID`)
-);
-
-DROP TABLE IF EXISTS `Exam`;
-CREATE TABLE `Exam`(
-	`ExamID` 					INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
-    `Code` 						VARCHAR(20) NOT NULL,
-    `Title` 					VARCHAR(50) NOT NULL,
-    `CategoryID` 				INT UNSIGNED NOT NULL,
-    `Duration` 					TINYINT UNSIGNED NOT NULL,
-    `CreatorID` 				INT UNSIGNED NOT NULL,
-    `CreateDate` 				DATETIME DEFAULT NOW(),
-    CONSTRAINT FOREIGN KEY(`CategoryID`) 	REFERENCES CategoryQuestion(`CategoryID`),
-    CONSTRAINT FOREIGN KEY(`CreatorID`)	REFERENCES Account(`AccountID`)
-);
-
-DROP TABLE IF EXISTS `ExamQuestion`;
-CREATE TABLE `ExamQuestion`(
-	`ExamID` 					INT UNSIGNED NOT NULL,
-    `QuestionID` 				INT UNSIGNED NOT NULL,
-    CONSTRAINT FOREIGN KEY(`ExamID`) 		REFERENCES Exam(`ExamID`),
-    CONSTRAINT FOREIGN KEY(`QuestionID`) 	REFERENCES Question(`QuestionID`),
-    CONSTRAINT PRIMARY KEY(`ExamID`, `QuestionID`)
-);
-
+-- Question 1: Thêm ít nhất 10 record vào mỗi table
 INSERT INTO `Department`(DepartmentName)
 VALUES
 	('Makerting'),
@@ -235,3 +134,73 @@ VALUES
    (5, 4),
    (1, 5),
    (2, 5);
+-- Question 2: lấy ra tất cả các phòng ban
+SELECT DepartmentName FROM `department`;
+
+-- Question 3: lấy ra id của phòng ban "Sale"
+SELECT DepartmentID AS ID 
+FROM `department`
+WHERE DepartmentName = 'Sale';
+
+-- Question 4: lấy ra thông tin account có full name dài nhất
+SELECT * FROM `account`
+WHERE character_length(Fullname) = (SELECT MAX(character_length(Fullname))
+FROM `account`);
+
+-- Question 5: Lấy ra thông tin account có full name dài nhất và thuộc phòng ban có id = 3
+SELECT * FROM `account`
+WHERE character_length(Fullname) = (SELECT MAX(character_length(Fullname))
+FROM `account`)
+AND DepartmentID = 3;
+
+-- Question 6: Lấy ra tên group đã tham gia trước ngày 20/12/2019
+SELECT GroupName 
+FROM `group`
+WHERE CreateDate < '2019-12-20';
+
+
+-- Question 7: Lấy ra ID của question có >= 4 câu trả lời
+SELECT QuestionID
+FROM `answer`
+GROUP BY QuestionID
+HAVING COUNT(QuestionID) >= 4;
+
+-- Question 8: Lấy ra các mã đề thi có thời gian thi >= 60 phút và được tạo trước ngày 20/12/2019
+SELECT Code
+FROM `Exam`
+WHERE Duration >= 60 AND CreateDate <= '2019-12-20';
+
+-- Question 9: Lấy ra 5 group được tạo gần đây nhất
+SELECT * FROM `group`
+ORDER BY CreateDate DESC
+LIMIT 5;
+
+-- Question 10: Đếm số nhân viên thuộc department có id = 2
+SELECT COUNT(AccountID) AS Amount
+FROM `account`
+WHERE DepartmentID = 2;
+
+-- Question 11: Lấy ra nhân viên có tên bắt đầu bằng chữ "D" và kết thúc bằng chữ "o"
+SELECT *
+FROM `Account`
+WHERE (SUBSTRING_INDEX(FullName, ' ', -1)) LIKE 'D%o' ;
+
+-- Question 12: Xóa tất cả các exam được tạo trước ngày 20/12/2019
+DELETE 
+FROM `exam`
+WHERE CreateDate < '2019-12-20';
+
+-- Question 13: Xóa tất cả các question có nội dung bắt đầu bằng từ "câu hỏi"
+DELETE 
+FROM `question`
+WHERE (SUBSTRING_INDEX(Content,' ',2)) = 'Câu hỏi';
+
+-- Question 14: Update thông tin của account có id = 5 thành tên "Nguyễn Bá Lộc" và email thành loc.nguyenba@vti.com.vn
+UPDATE `Account`
+SET Fullname = 'Nguyễn Bá Lộc', Email = 'loc.nguyenba@vti.com.vn'
+WHERE AccountID = 5;
+
+-- Question 15: update account có id = 5 sẽ thuộc group có id = 4
+UPDATE `groupaccount`
+SET AccountID = 5
+WHERE GroupID = 5;
